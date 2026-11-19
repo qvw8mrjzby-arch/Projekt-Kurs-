@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stau-Navi: Ankunft mit Wahrscheinlichkeit</title>
+<style>
+:root{--bg1:#dfe9ff;--bg2:#f3e6ff;--txt:#101828;--mut:#5b6678;--gl:rgba(255,255,255,.52);--gb:rgba(255,255,255,.75);--sh:rgba(40,60,120,.16);--in:rgba(255,255,255,.55);--acc:#0a84ff;--y:#ffb800;--ra:#ff453a;--rb:#28b84f;--rc:#0a84ff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg1:#0b1226;--bg2:#1c0f2e;--txt:#f2f5fa;--mut:#9aa6ba;--gl:rgba(40,48,70,.5);--gb:rgba(255,255,255,.16);--sh:rgba(0,0,0,.4);--in:rgba(255,255,255,.08);--y:#ffd60a}}
+:root[data-theme="dark"]{--bg1:#0b1226;--bg2:#1c0f2e;--txt:#f2f5fa;--mut:#9aa6ba;--gl:rgba(40,48,70,.5);--gb:rgba(255,255,255,.16);--sh:rgba(0,0,0,.4);--in:rgba(255,255,255,.08);--y:#ffd60a}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;color:var(--txt);font:400 16px/1.45 -apple-system,"SF Pro Text",system-ui,Inter,sans-serif;background:linear-gradient(160deg,var(--bg1),var(--bg2));padding:0 14px 120px}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(40vmax 40vmax at 10% 8%,#4f9dff88,transparent 60%),radial-gradient(36vmax 36vmax at 95% 30%,#ff6bd666,transparent 60%),radial-gradient(42vmax 42vmax at 30% 100%,#35e0a166,transparent 60%)}
+main{max-width:640px;margin:0 auto}
+.tab{display:none}.tab.on{display:block}
+h1{font-size:32px;line-height:1.1;letter-spacing:-.02em;margin:18px 4px 4px;font-weight:700}
+h2{font-size:19px;letter-spacing:-.01em;margin:0 0 10px;font-weight:650}
+.sub{color:var(--mut);margin:0 4px 14px;font-size:15px}
+.g{background:var(--gl);backdrop-filter:blur(26px) saturate(180%);-webkit-backdrop-filter:blur(26px) saturate(180%);border:1px solid var(--gb);border-radius:26px;padding:16px;margin-bottom:12px;box-shadow:inset 0 1px 0 var(--in),0 10px 32px var(--sh)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.g3{grid-template-columns:repeat(3,1fr)}
+label{display:block;font-size:13px;color:var(--mut);margin-bottom:3px}
+select,input[type=time],input[type=number],input[type=text]{width:100%;font:inherit;color:var(--txt);padding:10px 12px;border:1px solid var(--gb);border-radius:14px;background:var(--in)}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.chk{display:flex;gap:8px;align-items:center;font-size:15px;color:var(--txt);margin:6px 0 0}
+.rt{display:block;width:100%;text-align:left;font:inherit;color:var(--txt);background:var(--in);border:2px solid transparent;border-left:7px solid var(--c);border-radius:20px;padding:12px 14px;margin-bottom:10px;cursor:pointer}
+.rt.on{border-color:var(--y);border-left-color:var(--c)}
+.rt .t{display:flex;justify-content:space-between;align-items:center;gap:8px}.rt b{font-size:17px}
+.bd{background:var(--y);color:#201800;font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px}
+.big{font-size:44px;line-height:1;font-weight:700;letter-spacing:-.03em;color:var(--c)}
+.row{display:flex;gap:14px;align-items:flex-end;margin-top:6px}.row small,.rt small{color:var(--mut);display:block;font-size:14px}
+.hero{font-size:46px;font-weight:700;letter-spacing:-.03em;line-height:1.05}
+svg{width:100%;height:auto;display:block}svg text{fill:var(--mut);font:11px -apple-system,system-ui,sans-serif}
+table{width:100%;border-collapse:collapse;font-size:15px}th,td{text-align:left;padding:6px;border-bottom:1px solid var(--gb)}th{color:var(--mut);font-weight:500}
+.btn{font:600 15px -apple-system,system-ui,sans-serif;padding:11px 18px;border:1px solid var(--gb);border-radius:99px;background:var(--acc);color:#fff;cursor:pointer}
+.note{font-size:13px;color:var(--mut);margin:8px 0 0}
+.tile{background:var(--in);border-radius:18px;padding:10px 12px}.tile b{display:block;font-size:22px;letter-spacing:-.02em}.tile span{font-size:13px;color:var(--mut)}
+nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));width:min(94vw,520px);display:flex;gap:2px;padding:6px;border-radius:99px;background:var(--gl);backdrop-filter:blur(30px) saturate(190%);-webkit-backdrop-filter:blur(30px) saturate(190%);border:1px solid var(--gb);box-shadow:inset 0 1px 0 var(--in),0 12px 36px var(--sh);z-index:5}
+nav a{flex:1;text-align:center;text-decoration:none;color:var(--mut);font-size:11px;padding:6px 0;border-radius:99px;line-height:1.2}
+nav a span{display:block;font-size:20px}nav a.on{background:var(--in);color:var(--txt);box-shadow:inset 0 0 0 1px var(--gb);font-weight:600}
+a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--y);outline-offset:1px}
+.md h3{font-size:16px;margin:16px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--gb)}.md ul{margin:0;padding-left:20px}.md li{margin:3px 0}
+.pill{display:inline-block;font-size:12px;padding:2px 10px;border-radius:99px;background:var(--in);border:1px solid var(--gb);margin:0 4px 4px 0}
+code,pre{font:13px ui-monospace,SFMono-Regular,Menlo,monospace}pre{background:var(--in);padding:10px;border-radius:14px;overflow-x:auto;margin:6px 0}
+@media(max-width:420px){.grid:not(.g3){grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+
+<section class="tab on" id="t-navi">
+<h1>Stau-Navi</h1>
+<p class="sub">Dein Weg mit Ankunftswahrscheinlichkeit und Abfahrtsempfehlung.</p>
+<div class="g">
+<div class="grid"><div><label for="from">Start</label><input type="text" id="from" value="Zuhause"></div><div><label for="to">Ziel</label><input type="text" id="to" value="Schule"></div></div>
+<svg viewBox="0 0 340 190" id="map" role="img" aria-label="Schematische Karte mit drei Routen" style="margin-top:12px;border-radius:18px;background:var(--in)">
+<g stroke="var(--gb)" stroke-width="1"><path d="M0 60H340M0 120H340M85 0V190M170 0V190M255 0V190"/></g>
+<path id="m0" d="M30 150C120 140 220 60 310 40" fill="none" stroke="var(--ra)" stroke-width="7" stroke-linecap="round"/>
+<path id="m1" d="M30 150C70 80 200 120 310 40" fill="none" stroke="var(--rb)" stroke-width="7" stroke-linecap="round"/>
+<path id="m2" d="M30 150C90 190 270 170 310 40" fill="none" stroke="var(--rc)" stroke-width="7" stroke-linecap="round"/>
+<circle cx="30" cy="150" r="9" fill="#fff" stroke="var(--txt)" stroke-width="3"/><circle cx="310" cy="40" r="9" fill="var(--y)" stroke="var(--txt)" stroke-width="3"/>
+<text x="14" y="176" id="lf">Zuhause</text><text x="262" y="24" id="lt">Schule</text></svg>
+</div>
+<div class="g"><label>Du musst da sein um</label><div class="hero" id="goT"></div><p class="note" id="verdict" style="font-size:15px;color:var(--txt)"></p></div>
+<div class="g">
+<h2>Einstellungen</h2>
+<div class="grid">
+<div><label for="day">Wochentag</label><select id="day"><option value="1">Montag</option><option value="1">Dienstag</option><option value="1">Mittwoch</option><option value="1.15" selected>Donnerstag</option><option value="1.05">Freitag</option><option value="0.4">Samstag</option><option value="0.3">Sonntag</option></select></div>
+<div><label for="arr">Ankunft spätestens</label><input type="time" id="arr" value="08:00"></div>
+<div><label for="conf">Sicherheit</label><select id="conf"><option value="0.8416">80 %</option><option value="1.2816" selected>90 %</option><option value="1.6449">95 %</option></select></div>
+<div><label for="dep">Abfahrt: <b id="depL"></b></label><input type="range" id="dep" min="5" max="120" value="45"></div>
+</div>
+<label class="chk"><input type="checkbox" id="rain"> Regen</label>
+<label class="chk"><input type="checkbox" id="bau"> Baustelle auf Route A</label>
+</div>
+<div id="routes"></div>
+</section>
+
+<section class="tab" id="t-prognose">
+<h1>Prognose</h1>
+<p class="sub">Wie sicher kommst du an, und wie stark schwankt die Fahrzeit?</p>
+<div class="g"><h2 id="pn"></h2><div class="grid g3" id="tiles"></div></div>
+<div class="g"><h2>Pünktlich je nach Abfahrt</h2><div id="c1"></div><p class="note">Gelb: deine Abfahrt. Gestrichelt: deine Sicherheit. Wo eine Linie die gestrichelte kreuzt, ist die späteste empfohlene Abfahrt.</p></div>
+<div class="g"><h2>Erwartete Verspätung über den Tag</h2><div id="c2"></div><p class="note">Gewählte Route, gewählter Wochentag. Spitzen um 7:45 und 16:00 (16 Uhr passt zu euren TomTom-Daten).</p></div>
+</section>
+
+<section class="tab" id="t-sparen">
+<h1>Zeit und Sprit sparen</h1>
+<p class="sub">Was dich die Routen bei deiner Abfahrt kosten, und was die beste spart.</p>
+<div class="g"><div class="grid g3">
+<div><label for="vb">l/100 km</label><input type="number" id="vb" value="7" min="1" step=".1"></div>
+<div><label for="sp">€ pro Liter</label><input type="number" id="sp" value="1.8" min="0.5" step=".01"></div>
+<div><label for="tg">Fahrten/Jahr</label><input type="number" id="tg" value="200" min="1"></div></div>
+<p class="note">Verbrauch, Preis und Fahrten sind Platzhalter: trag deine echten Werte ein.</p></div>
+<div class="g" id="sv"></div>
+<div class="g"><h2>Zum Vergleich: ganz Deutschland</h2><div class="grid"><div class="tile"><b>47 h</b><span>Stau pro Autofahrer 2025, +4 h zu 2024 (INRIX)</span></div><div class="tile"><b>750 €</b><span>Kosten pro Fahrer, 5,3 Mrd. € gesamt (INRIX)</span></div></div></div>
+</section>
+
+<section class="tab" id="t-messung">
+<h1>Messfahrten</h1>
+<p class="sub">Experiment 1: Wie nah liegt die Prognose an der echten Fahrzeit?</p>
+<div class="g"><div class="grid g3"><div><label for="mp">Prognose min</label><input type="number" id="mp" min="1" step=".5"></div><div><label for="mn">Navi min</label><input type="number" id="mn" min="1" step=".5"></div><div><label for="mr">Echt min</label><input type="number" id="mr" min="1" step=".5"></div></div>
+<p><button class="btn" id="add">Fahrt speichern</button></p>
+<table><thead><tr><th>Prognose</th><th>Navi</th><th>Echt</th></tr></thead><tbody id="log"><tr><td colspan="3" style="color:var(--mut)">Noch keine Fahrt gespeichert.</td></tr></tbody></table>
+<p id="mae" style="margin:10px 0 0"></p></div>
+</section>
+
+<section class="tab" id="t-projekt">
+<h1>Projekt</h1>
+<p class="sub">Die Repo-Seite zur App, so wie sie auf GitHub aussehen kann.</p>
+<div class="g md">
+<h2>stau-prognose</h2>
+<span class="pill">Status: Prototyp</span><span class="pill">Daten: Demo-Modell</span><span class="pill">Jugend forscht 2026/27</span><span class="pill">Lizenz: MIT</span>
+<p>Eine App, die Stau nicht nur anzeigt, sondern im Voraus plant: für jede Route die Ankunftszeit als Wahrscheinlichkeit, dazu die späteste sichere Abfahrt.</p>
+<h3>Funktionen</h3>
+<ul><li>Drei Routen im Vergleich mit Verspätung und Wahrscheinlichkeit</li><li>Abfahrtsempfehlung für 80, 90 oder 95 % Sicherheit</li><li>Zeit- und Spritrechnung pro Fahrt und Jahr</li><li>Messfahrten: Fehler der Prognose gegen das normale Navi</li></ul>
+<h3>Datenquellen (geplant)</h3>
+<ul><li>Mobilithek (Bund), Autobahn GmbH, Städte wie Bonn über open.nrw</li><li>Wetterwarnungen vom Deutschen Wetterdienst</li><li>Eigene Messfahrten auf einer Teststrecke</li></ul>
+<h3>Roadmap</h3>
+<ul style="list-style:none;padding:0"><li>☑ Prototyp mit Wahrscheinlichkeitsmodell</li><li>☑ Navi, Prognose, Sparen, Messfahrten</li><li>☐ Recherche: Google Maps und Waze bei der Vorausplanung prüfen</li><li>☐ Echte Daten aus Mobilithek anbinden</li><li>☐ Messfahrten auswerten, Experiment 1</li><li>☐ Maschinelles Lernen gegen das Modell testen</li><li>☐ Umfrage unter Mitschülern und Eltern, Experiment 2</li></ul>
+<h3>Echte Zahlen aus der Recherche</h3>
+<table><tr><td>Staustunden Autobahn 2025</td><td>478.154 h (+7 %), ADAC</td></tr><tr><td>Anzahl Staus 2025</td><td>ca. 496.000, ADAC</td></tr><tr><td>Gesamtlänge Staus</td><td>ca. 866.000 km, ADAC</td></tr><tr><td>Verlorene Zeit pro Fahrer</td><td>47 h, INRIX</td></tr><tr><td>Staureichste Stadt</td><td>Köln, 67 h, INRIX</td></tr><tr><td>Städte mit mehr Stau</td><td>56 von 73, INRIX</td></tr><tr><td>Pendler mit Auto</td><td>65 %, Allianz Direct</td></tr><tr><td>Pendelweg im Schnitt</td><td>28 min für ca. 18 km, ingenieur.de</td></tr></table>
+<h3>Auf GitHub veröffentlichen</h3>
+<ul><li>Neues Repository <code>stau-prognose</code> anlegen</li><li><code>index.html</code> und <code>README.md</code> hochladen</li><li>Settings, Pages, Branch <code>main</code> wählen: die App läuft unter deiner GitHub-Pages-Adresse</li></ul>
+<h3>Ehrlicher Stand</h3>
+<p>Basisfahrzeiten, Auslastungskurve, Regen- und Baustellenzuschlag, Verbrauch und Streckenlängen der Routen sind Demo-Annahmen. Live-Verkehrsdaten lädt diese Seite nicht. Die Zahlen oben stammen aus eurer Recherche.</p>
+</div>
+</section>
+</main>
+<nav aria-label="Hauptnavigation"><a href="#navi" class="on"><span>🧭</span>Navi</a><a href="#prognose"><span>📈</span>Prognose</a><a href="#sparen"><span>⛽</span>Sparen</a><a href="#messung"><span>📏</span>Messung</a><a href="#projekt"><span>📘</span>Projekt</a></nav>
+<script>
+const R=[{n:"A · Autobahn",b:22,s:1,km:22,c:"var(--ra)"},{n:"B · Landstraße",b:27,s:.7,km:19,c:"var(--rb)"},{n:"C · Stadt",b:31,s:.5,km:17,c:"var(--rc)"}];
+const $=id=>document.getElementById(id);let sel=0,manual=false;
+function cong(h,m){const p=(c,a,w)=>a*Math.exp(-((h-c)**2)/(2*w*w));return(.12+p(7.75,.7,1)+p(16,1,1.3))*m}
+function erf(x){const s=x<0?-1:1;x=Math.abs(x);const t=1/(1+.3275911*x);return s*(1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-.284496736)*t+.254829592)*t*Math.exp(-x*x))}
+const Phi=z=>.5*(1+erf(z/Math.SQRT2));
+function par(r,i,dm,S){let c=cong(dm/60,S.m);if(S.rain)c*=1.25;const bz=S.bau&&i==0;
+  const mean=r.b*(1+r.s*c*.9)+(bz?5:0),cv=.06+.12*c*(S.rain?1.3:1)+(bz?.04:0),sg=Math.sqrt(Math.log(1+cv*cv));
+  return{mean,sg,mu:Math.log(mean)-sg*sg/2,c}}
+const pOn=(p,t)=>t<=0?0:Phi((Math.log(t)-p.mu)/p.sg);
+const fmt=m=>{m=Math.round(m);m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0")};
+const nf=(x,d=1)=>x.toLocaleString("de-DE",{minimumFractionDigits:d,maximumFractionDigits:d});
+function S(){const[a,b]=$("arr").value.split(":").map(Number),z=+$("conf").value;return{m:+$("day").value,rain:$("rain").checked,bau:$("bau").checked,T:a*60+b,z,conf:z<1?.8:z<1.4?.9:.95}}
+function rec(r,i,s){for(let d=1;d<=150;d++)if(pOn(par(r,i,s.T-d,s),d)>=s.conf)return d;return null}
+function run(){
+  const s=S(),d=+$("dep").value,vb=+$("vb").value,sp=+$("sp").value,tg=+$("tg").value,cf=Math.round(s.conf*100);
+  $("depL").textContent=fmt(s.T-d);$("goT").textContent=fmt(s.T)+" Uhr";
+  let best=-1,bd=1e9;
+  const o=R.map((r,i)=>{const p=par(r,i,s.T-d,s),q=Math.exp(p.mu+p.sg*s.z),rd=rec(r,i,s),lit=r.km*vb/100*(1+.3*p.c*r.s);
+    if(rd!==null&&rd<bd){bd=rd;best=i}return{r,i,p,pr:pOn(p,d),q,rd,lit,eur:lit*sp,lo:Math.exp(p.mu-1.2816*p.sg),hi:Math.exp(p.mu+1.2816*p.sg)}});
+  if(!manual&&best>=0)sel=best;const O=o[sel];
+  o.forEach(x=>{const e=$("m"+x.i);e.style.opacity=x.i===sel?1:.3;e.setAttribute("stroke-width",x.i===sel?10:6)});
+  $("routes").innerHTML=o.map(x=>`<button class="rt${x.i===sel?" on":""}" data-i="${x.i}" style="--c:${x.r.c}"><div class="t"><b>${x.r.n}</b>${x.i===best?'<span class="bd">Empfehlung</span>':""}</div>
+  <div class="row"><div class="big">${nf(x.pr*100,0)} %</div><div><small>pünktlich bei Abfahrt ${fmt(s.T-d)}</small><small>mit ${cf} % bis ${fmt(s.T-d+x.q)} da</small></div></div>
+  <small style="margin-top:6px">${nf(x.p.mean,0)} min erwartet, ${nf(x.p.mean-x.r.b,0)} min Verspätung · späteste Abfahrt ${x.rd===null?"nicht möglich":fmt(s.T-x.rd)}</small></button>`).join("");
+  $("verdict").innerHTML=best>=0?`<b>Fahr Route ${o[best].r.n.split(" ")[0]}</b> und starte spätestens um <b>${fmt(s.T-bd)} Uhr</b>, dann bist du mit ${cf} % pünktlich.`:"Keine Route schafft das in 2,5 Stunden.";
+  $("pn").textContent="Route "+O.r.n;
+  $("tiles").innerHTML=`<div class="tile"><b>${nf(O.pr*100,0)} %</b><span>pünktlich</span></div><div class="tile"><b>${nf(O.p.mean,0)} min</b><span>erwartet</span></div><div class="tile"><b>${nf(O.lo,0)}–${nf(O.hi,0)}</b><span>80 %-Bereich in min</span></div>`;
+  c1(s,d);c2(s);
+  const w=o.reduce((a,x)=>x.p.mean>a.p.mean?x:a),dm=Math.max(0,w.p.mean-O.p.mean),de=Math.max(0,w.eur-O.eur);
+  $("sv").innerHTML=`<h2>Pro Fahrt bei Abfahrt ${fmt(s.T-d)}</h2><table><thead><tr><th>Route</th><th>Zeit</th><th>Sprit</th><th>Kosten</th></tr></thead>`+o.map(x=>`<tr style="${x.i===sel?"font-weight:700":""}"><td>${x.r.n}</td><td>${nf(x.p.mean,0)} min</td><td>${nf(x.lit,2)} l</td><td>${nf(x.eur,2)} €</td></tr>`).join("")+`</table>
+  <h2 style="margin-top:14px">Mit Route ${O.r.n.split(" ")[0]} statt ${w.r.n.split(" ")[0]}</h2><div class="grid"><div class="tile"><b>${nf(dm,0)} min</b><span>pro Fahrt, ${nf(dm*tg/60)} h im Jahr</span></div><div class="tile"><b>${nf(de,2)} €</b><span>pro Fahrt, ${nf(de*tg,0)} € im Jahr</span></div></div>
+  <p class="note">Spritrechnung: Strecke × Verbrauch, im zähen Verkehr bis 30 % mehr (Annahme). Streckenlängen der Routen sind Demo-Werte.</p>`;
+}
+function c1(s,d){const W=640,H=230,L=36,B=24,T=8,x=m=>L+(150-m)/145*(W-L-8),y=p=>T+(1-p)*(H-T-B);let o="";
+  for(let p=0;p<=1;p+=.25)o+=`<line x1="${L}" x2="${W-8}" y1="${y(p)}" y2="${y(p)}" stroke="var(--gb)"/><text x="2" y="${y(p)+4}">${p*100} %</text>`;
+  for(let m=150;m>=0;m-=30)o+=`<text x="${x(m)-14}" y="${H-6}">${fmt(s.T-m)}</text>`;
+  o+=`<line x1="${L}" x2="${W-8}" y1="${y(s.conf)}" y2="${y(s.conf)}" stroke="var(--txt)" stroke-dasharray="5 4"/>`;
+  R.forEach((r,i)=>{let q="";for(let m=150;m>=5;m-=2)q+=(q?"L":"M")+x(m).toFixed(1)+" "+y(pOn(par(r,i,s.T-m,s),m)).toFixed(1);o+=`<path d="${q}" fill="none" stroke="${r.c}" stroke-width="${i===sel?4:2.5}" stroke-linecap="round" opacity="${i===sel?1:.6}"/>`});
+  o+=`<line x1="${x(d)}" x2="${x(d)}" y1="${T}" y2="${H-B}" stroke="var(--y)" stroke-width="3"/>`;
+  $("c1").innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Wahrscheinlichkeit pünktlich zu sein je Abfahrtszeit">${o}</svg>`}
+function c2(s){const W=640,H=190,B=22,r=R[sel],v=[];for(let h=5;h<=20;h++)v.push([h,par(r,sel,h*60,s).mean-r.b]);const mx=Math.max(...v.map(a=>a[1]),5),bw=(W-20)/v.length;let o="";
+  v.forEach(([h,e],k)=>{const bh=e/mx*(H-B-18);o+=`<rect x="${10+k*bw+3}" y="${H-B-bh}" width="${bw-6}" height="${bh}" rx="6" fill="${r.c}" opacity=".85"/><text x="${10+k*bw+bw/2-6}" y="${H-6}">${h}</text>`+(bh>22?`<text x="${10+k*bw+bw/2-7}" y="${H-B-bh-4}">${nf(e,0)}</text>`:"")});
+  $("c2").innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Erwartete Verspätung nach Uhrzeit">${o}</svg>`}
+$("routes").addEventListener("click",e=>{const b=e.target.closest(".rt");if(b){sel=+b.dataset.i;manual=true;run()}});
+["day","arr","conf","dep","rain","bau","vb","sp","tg"].forEach(i=>$(i).addEventListener("input",()=>{if(["day","arr","conf","rain","bau"].includes(i))manual=false;run()}));
+$("from").oninput=()=>$("lf").textContent=$("from").value;$("to").oninput=()=>$("lt").textContent=$("to").value;
+const log=[];$("add").onclick=()=>{const p=parseFloat($("mp").value),n=parseFloat($("mn").value),r=parseFloat($("mr").value);if([p,n,r].some(isNaN))return;log.push({p,n,r});["mp","mn","mr"].forEach(i=>$(i).value="");
+  $("log").innerHTML=log.map(e=>`<tr><td>${e.p}</td><td>${e.n}</td><td>${e.r}</td></tr>`).join("");
+  const m=k=>log.reduce((a,e)=>a+Math.abs(e[k]-e.r),0)/log.length;
+  $("mae").innerHTML=`Mittlerer Fehler (${log.length} Fahrten): <b>Prognose ${nf(m("p"))} min</b>, Navi ${nf(m("n"))} min. ${m("p")<m("n")?"Eure Prognose liegt vorn.":m("p")>m("n")?"Das Navi liegt vorn.":"Gleichstand."}`};
+function go(){let t=location.hash.slice(1)||"navi";if(!$("t-"+t))t="navi";document.querySelectorAll(".tab").forEach(e=>e.classList.toggle("on",e.id==="t-"+t));document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on",a.getAttribute("href")==="#"+t));scrollTo(0,0)}
+addEventListener("hashchange",go);go();run();
+</script>
+</body>
+</html>
